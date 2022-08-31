@@ -1,0 +1,48 @@
+services:
+  db:
+    image: ${MARIADB_DOCKER_IMAGE}
+    container_name: ${WORDPRESS_SITE_NAME}-db
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    container_name: ${WORDPRESS_SITE_NAME}-phpmyadmin
+    restart: always
+    ports:
+      - ${PHPMYADMIN_LOCAL_PORT}
+    environment:
+      - PMA_HOST=${WORDPRESS_DB_HOST}
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+  wordpress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - wordpress_docker_image=${WORDPRESS_DOCKER_IMAGE}
+    image: ${WORDPRESS_CONTAINER_NAME}
+    container_name: ${WORDPRESS_CONTAINER_NAME}
+    environment:
+      - WORDPRESS_DB_HOST=${WORDPRESS_DB_HOST}
+      - WORDPRESS_DB_USER=${WORDPRESS_DB_USER}
+      - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD}
+      - WORDPRESS_DB_NAME=${WORDPRESS_DB_NAME}
+    volumes:
+      - ..:/var/www/html
+    ports:
+      - ${WORDPRESS_SITE_LOCAL_PORT}
+    restart: always
+    depends_on:
+      - db
+volumes:
+  db_data:
+networks:
+  default:
+    name: ${WORDPRESS_SITE_NAME}-network
